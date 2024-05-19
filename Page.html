@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+
+
+<!-- Styling for the HTML document -->
+<style>
+body {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+
+.form-container {
+  background-color: #333;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 2%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+h2 {
+  color: #007aff;
+  margin-bottom: 2%;
+}
+
+
+label, select, input {
+  color: #ffffff;
+  margin: 1% 0;
+  width: 100%;
+}
+
+
+select, input[type="text"], input[type="number"] {
+  background-color: #252525;
+  border: 1px solid #333;
+  border-radius: 5px;
+  color: #ffffff;
+  width: 100%;
+  padding: 2%;
+}
+
+
+select:focus, input[type="text"]:focus, input[type="number"]:focus {
+  outline: none;
+  border: 1px solid #007aff;
+}
+
+
+#comments {
+  background-color: #252525;
+  border: 1px solid #333;
+  border-radius: 5px;
+  color: #ffffff;
+  width: 100%;
+  padding: 2%;
+  height: 150px;
+  vertical-align: top;
+}
+
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2%;
+}
+
+
+.button {
+  background-color: #007aff;
+  color: #fff;
+  padding: 1% 2%;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 45%;
+  margin: 0 2%;
+}
+
+
+.button-disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+
+#totalTime {
+  font-size: 1.5em;
+  margin: 2% 0;
+}
+
+
+#currentDate {
+  font-size: 1.2em;
+  color: #007aff;
+  margin-bottom: 2%;
+}
+
+
+@media screen and (max-width: 600px) {
+  .form-container {
+    padding: 5%;
+  }
+  .button {
+    width: 45%;
+    margin: 2%;
+  }
+}
+
+</style>
+
+
+<!-- JavaScript code for the HTML document -->
+<script>
+
+// Function to validate input fields before submitting
+function validateInputs() {
+ var requiredFields = [
+   'symphonyLink',
+   'hadesLink',
+   'yttvCasesLink',
+   'countOfInstances',
+   'activity',
+   'subActivity',
+   'networkLeagueDD',
+ ];
+
+
+ // Loop through the required fields and check if they are empty or set to '--Select--'
+ for (var i = 0; i < requiredFields.length; i++) {
+   var field = document.getElementById(requiredFields[i]);
+   if (field.value.trim() === '' || field.value === '--Select--') {
+     Swal.fire({
+       icon: 'error',
+       title: 'Oops...',
+       text: 'Please fill in all required fields.',
+     });
+     return false;
+   }
+ }
+ return true;
+}
+
+
+// Function to clear input fields
+function clearInputFields() {
+document.getElementById('symphonyLink').value = '';
+document.getElementById('hadesLink').value = '';
+document.getElementById('yttvCasesLink').value = '';
+document.getElementById('countOfInstances').value = '';
+document.getElementById('comments').value = '';
+}
+
+
+// Function to reset dropdowns
+function resetDropdowns() {
+document.getElementById('activity').selectedIndex = 0;
+document.getElementById('subActivity').selectedIndex = 0;
+document.getElementById('networkLeagueDD').selectedIndex = 0;
+}
+
+
+// Function to discard data
+function discardData() {
+clearInputFields();
+resetDropdowns();
+}
+
+
+// Function to display the current date
+function displayCurrentDate() {
+  google.script.run.withSuccessHandler(function(serverTime) {
+    var currentDateElement = document.getElementById('currentDate');
+    currentDateElement.value = new Date(serverTime).toLocaleDateString();
+  }).getCurrentTime();
+}
+
+
+// Function to update the shift date display
+function updateShiftDateDisplay() {
+    var shiftDate = document.getElementById('shiftDate').value;
+    var formattedShiftDate = formatDate(shiftDate);
+    document.getElementById('shiftDateHidden').value = formattedShiftDate;
+}
+
+// Function to format the shift date as MM/DD/YYYY
+function formatDate(dateString) {
+    var parts = dateString.split("-");
+    return parts[1] + '/' + parts[2] + '/' + parts[0];
+}
+
+
+// Variables for the timer
+var startTime;
+var timerInterval;
+var totalTime = 0;
+var timerRunning = false;
+
+
+// Function to reset the timer
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  totalTime = 0;
+  updateTotalTime(totalTime);
+  toggleButtons(false);
+}
+
+
+// Function to display the current user's email
+function displayCurrentUserEmail() {
+  google.script.run.withSuccessHandler(function(email) {
+    // Remove the "@google.com" part from the email
+    var modifiedEmail = email.replace('@google.com', '');
+    var userEmailElement = document.getElementById('userEmail');
+    userEmailElement.textContent = modifiedEmail;
+    userEmailElement.value = modifiedEmail;
+  }).getUserEmail();
+}
+
+
+// Function to update the timer
+function updateTime() {
+  var now = new Date();
+  var elapsedTime = (now - startTime) / 1000;
+  updateTotalTime(totalTime + elapsedTime);
+}
+
+
+// Function to update the total time display
+function updateTotalTime(time) {
+  document.getElementById('totalTime').textContent = formatTime(time);
+}
+
+
+// Function to format time in HH:mm:ss format
+function formatTime(seconds) {
+  var hours = Math.floor(seconds / 3600);
+  var minutes = Math.floor((seconds % 3600) / 60);
+  var remainingSeconds = Math.floor(seconds % 60);
+
+
+  var formattedTime =
+    (hours < 10 ? '0' : '') + hours + ':' +
+    (minutes < 10 ? '0' : '') + minutes + ':' +
+    (remainingSeconds < 10 ? '0' : '') + remainingSeconds;
+
+
+  return formattedTime;
+}
+
+
+// Function to format the start time
+function formatStartTime(date) {
+  var hours = date.getHours();
+  var minutes = date.getMinutes();
+  var seconds = date.getSeconds();
+  var ampm = hours >= 12 ? 'PM' : 'AM';
+
+
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  minutes = minutes < 10 ? '0' + minutes : minutes;
+  seconds = seconds < 10 ? '0' + seconds : seconds;
+
+
+  return hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+}
+
+
+// Function to toggle the start and stop buttons
+function toggleButtons(running) {
+  document.getElementById('startButton').disabled = running;
+  document.getElementById('stopButton').disabled = !running;
+}
+
+
+// Event listener for page load
+window.addEventListener('load', function () {
+  displayCurrentDate();
+  displayCurrentUserEmail();
+  toggleButtons(false);
+});
+
+
+// Function to start the timer
+var startTime;
+function startTimer() {
+if (timerRunning) {
+  return;
+}
+
+
+// Get the selected shift date
+var shiftDateElement = document.getElementById('shiftDate');
+var shiftDate = shiftDateElement.value;
+
+
+if (!shiftDate) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Please select a shift date.'
+    });
+    return;
+} else if (!subActivity === "--Select--") {
+    Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Please select a sub-activity.'
+    });
+    return;
+} else if (!networkLeagueDD === "--Select--") {
+    Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Please select a network/league.'
+    });
+    return;
+}
+
+startTime = new Date();
+timerInterval = setInterval(updateTime, 1000);
+timerRunning = true;
+toggleButtons(true);
+}
+
+
+// Function to stop the timer
+function stopTimer() {
+  // Display a confirmation dialog
+  Swal.fire({
+    title: 'Are you sure?',
+    text: 'Are you sure you want to submit?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, submit it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      if (!validateInputs()) {
+        return;
+      }
+
+      if (!timerRunning) {
+        return;
+      }
+
+      clearInterval(timerInterval);
+      var endTime = new Date();
+      var elapsedTime = (endTime - startTime) / 1000;
+      totalTime += elapsedTime;
+      updateTotalTime(totalTime);
+
+      var formattedEndTime = formatStartTime(endTime);
+
+      var userEmail = document.getElementById('userEmail').value;
+      var currentDateElement = document.getElementById('currentDate').value;
+      var shiftDate = document.getElementById('shiftDateHidden').value; // Retrieve formatted shift date from hidden field
+      var activity = document.getElementById('activity').value;
+      var subActivity = document.getElementById('subActivity').value;
+      var networkLeagueDD = document.getElementById('networkLeagueDD').value;
+      var symphonyLink = document.getElementById('symphonyLink').value;
+      var hadesLink = document.getElementById('hadesLink').value;
+      var yttvCasesLink = document.getElementById('yttvCasesLink').value;
+      var countOfInstances = document.getElementById('countOfInstances').value;
+      var comments = document.getElementById('comments').value;
+
+      var formattedTime = formatTime(totalTime);
+      var formattedStartTime = formatStartTime(startTime);
+
+      var data = [
+        currentDateElement,
+        shiftDate,
+        activity,
+        subActivity,
+        formattedStartTime,
+        formattedEndTime,
+        formattedTime,
+        networkLeagueDD,
+        symphonyLink,
+        hadesLink,
+        countOfInstances,
+        comments,
+        userEmail,
+        yttvCasesLink
+      ];
+
+      // Call the server-side function to export data to Google Sheets
+      google.script.run.exportData(data);
+
+      // Display a success message using SweetAlert
+      Swal.fire({
+        title: 'Success!',
+        text: 'Task has been saved!',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+
+      // Reset the timer and clear input fields
+      resetTimer();
+      clearInputFields();
+    }
+  });
+}
+
+
+</script>
+
+</head>
+
+<body class="bg-gray-900 text-white font-sans flex flex-col justify-center items-center min-h-screen">
+
+    <div class="form-container bg-gray-800 border border-gray-700 rounded-lg p-6 w-full max-w-xl text-left">
+        <div id="currentDate" class="text-blue-500 text-lg mb-4"></div>
+        <input type="hidden" id="userEmail" value="">
+        <input type="hidden" id="currentDate" value="">
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="mb-4">
+                <label for="shiftDate" class="block mb-2">Shift Date:</label>
+                <input type="date" id="shiftDate" onchange="updateShiftDateDisplay()"
+                    class="bg-gray-700 text-white p-2 rounded-md w-full">
+                <input type="hidden" id="shiftDateHidden" value="">
+            </div>
+
+            <div class="mb-4">
+                <label for="activity" class="block mb-2">LOB:</label>
+                <select id="activity" class="bg-gray-700 text-white p-2 rounded-md w-full">
+                    <option value="VOD Core + Artwork">VOD Core + Artwork</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="mb-4">
+                <label for="subActivity" class="block mb-2">Activity:</label>
+                <select id="subActivity" class="bg-gray-700 text-white p-2 rounded-md w-full">
+                  <option value="--Select--">--Select--</option>
+                  <option value="Artwork Ad Hoc Tasks - Artwork">Artwork Ad Hoc Tasks - Artwork</option>
+                  <option value="Artwork - Documentation">Artwork - Documentation</option>
+                  <option value="Artwork - Meetings/ Syncs">Artwork - Meetings/ Syncs</option>
+                  <option value="Artwork - Reporting/Analysis">Artwork - Reporting/Analysis</option>
+                  <option value="Artwork - Tasks Allocation">Artwork - Tasks Allocation</option>
+                  <option value="Artwork - BP Carousel">Artwork - BP Carousel</option>
+                  <option value="Artwork - BP Master Tracker">Artwork - BP Master Tracker</option>
+                  <option value="Artwork - Fallback Imagery">Artwork - Fallback Imagery</option>
+                  <option value="Artwork - Image Completeness Research">Artwork - Image Completeness Research</option>
+                  <option value="Artwork - Image Completeness Research - QA">Artwork - Image Completeness Research - QA</option>
+                  <option value="Artwork - Image Completeness Symphony - QA">Artwork - Image Completeness Symphony - QA</option>
+                  <option value="Artwork - Image Completeness Symphony - Status">Artwork - Image Completeness Symphony - Status</option>
+                  <option value="Artwork - Logo Request or Update">Artwork - Logo Request or Update</option>
+                  <option value="Artwork - Network Shelf Updates (Partner Request)">Artwork - Network Shelf Updates (Partner Request)</option>
+                  <option value="Artwork - Network Shelf/Bubble">Artwork - Network Shelf/Bubble</option>
+                  <option value="Artwork - News Segments Checking">Artwork - News Segments Checking</option>
+                  <option value="Artwork - PEM (Image Gaps)">Artwork - PEM (Image Gaps)</option>
+                  <option value="Artwork - Program (Partner Request)">Artwork - Program (Partner Request)</option>
+                  <option value="Artwork - Promo Artwork (BP Carousel Image Request)">Artwork - Promo Artwork (BP Carousel Image Request)</option>
+                  <option value="Artwork - Spanish Badge">Artwork - Spanish Badge</option>
+
+                  <option value="VOD Watchability - Allocation">VOD Watchability - Allocation</option>
+                  <option value="VOD Watchability - Availability Window Mismatch">VOD Watchability - Availability Window Mismatch</option>
+                  <option value="VOD Watchability - Documentation">VOD Watchability - Documentation</option>
+                  <option value="VOD Watchability - Marquee Error Research">VOD Watchability - Marquee Error Research</option>
+                  <option value="VOD Watchability - Metadata not Exists">VOD Watchability - Metadata not Exists</option>
+                  <option value="VOD Watchability - Reporting/Analysis">VOD Watchability - Reporting/Analysis</option>
+                  <option value="VOD Watchability - S/E mismatch">VOD Watchability - S/E mismatch</option>
+                  <option value="VOD Watchability - Worktype Do Not Match">VOD Watchability - Worktype Do Not Match</option>
+                  <option value="VOD Watchability - No Video Title">VOD Watchability - No Video Title</option>
+                  <option value="VOD Watchability - No Video Description">VOD Watchability - No Video Description</option>
+                  <option value="VOD Ad Hoc Tasks - Scrubbing">VOD Ad Hoc Tasks - Scrubbing</option>     
+                  <option value="VOD Ad Hoc Tasks - Documentation">VOD Ad Hoc Tasks - Documentation</option>
+                  <option value="VOD Ad Hoc Tasks - Gracenote Ticket Filing">VOD Ad Hoc Tasks - Gracenote Ticket Filing</option>
+                  <option value="VOD Ad Hoc Tasks - Other">VOD Ad Hoc Tasks - Other</option>             
+                  <option value="VOD Ad Hoc Tasks - Parked Symphony Task">VOD Ad Hoc Tasks - Parked Symphony Task</option>
+                  <option value="VOD Ad Hoc Tasks - Reporting/ Analysis">VOD Ad Hoc Tasks - Reporting/ Analysis</option>
+                  <option value="VOD Ad Hoc Tasks - TMS ID Reconciliation">VOD Ad Hoc Tasks - TMS ID Reconciliation</option>
+                  <option value="VOD Metadata - DTC & CMS Comparison">VOD Metadata - DTC & CMS Comparison</option>
+                  <option value="VOD Metadata - PTC-DTC comparison">VOD Metadata - PTC-DTC comparison</option>
+                  <option value="Marquee VOD Checklist">Marquee VOD Checklist</option>
+                  <option value="Onboarding/ Refresher Training">Onboarding/ Refresher Training</option>                 
+                  <option value="Meetings/ Syncs">Meetings/ Syncs</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="networkLeagueDD" class="block mb-2">Network/League:</label>
+                <select id="networkLeagueDD" class="bg-gray-700 text-white p-2 rounded-md w-full">
+                  <option value="--Select--">--Select--</option>
+                  <option value="N/A">N/A</option>
+                  <option value="ABC">ABC</option>
+                  <option value="Acorn TV">Acorn TV</option>
+                  <option value="ALLBLK">ALLBLK</option>
+                  <option value="AMC">AMC</option>
+                  <option value="AMC+">AMC+</option>
+                  <option value="Anecrime">Anecrime</option>
+                  <option value="anehistory.de">anehistory.de</option>
+                  <option value="Animal Planet">Animal Planet</option>
+                  <option value="Antena 3">Antena 3</option>
+                  <option value="ARD Plus">ARD Plus</option>
+                  <option value="ATRESplayer">ATRESplayer</option>
+                  <option value="Baby TV Español">Baby TV Español</option>
+                  <option value="Bandamax">Bandamax</option>
+                  <option value="beIN SPORTS">beIN SPORTS</option>
+                  <option value="beIN SPORTS en Español">beIN SPORTS en Español</option>
+                  <option value="Bergblick">Bergblick</option>
+                  <option value="BET">BET</option>
+                  <option value="BFI">BFI</option>
+                  <option value="BILD">BILD</option>
+                  <option value="BTN">BTN</option>
+                  <option value="CBS">CBS</option>
+                  <option value="Cheddar News">Cheddar News</option>
+                  <option value="Cine Mexicano">Cine Mexicano</option>
+                  <option value="Cinelatino">Cinelatino</option>
+                  <option value="Cinemax">Cinemax</option>
+                  <option value="Classica">Classica</option>
+                  <option value="cmt.com">cmt.com</option>
+                  <option value="CNN">CNN</option>
+                  <option value="Comedy Central">Comedy Central</option>
+                  <option value="CONtv">CONtv</option>
+                  <option value="Crime + Investigation Play">Crime + Investigation Play</option>
+                  <option value="CuriosityStream">CuriosityStream</option>
+                  <option value="DAZN Game Pass">DAZN Game Pass</option>
+                  <option value="De Película">De Película</option>
+                  <option value="De Película Clásico">De Película Clásico</option>
+                  <option value="Dekkoo">Dekkoo</option>
+                  <option value="dekkoo.com">dekkoo.com</option>
+                  <option value="Discovery">Discovery</option>
+                  <option value="Discovery en Español">Discovery en Español</option>
+                  <option value="Discovery Familia">Discovery Familia</option>
+                  <option value="Disney">Disney</option>
+                  <option value="Djazz">Djazz</option>
+                  <option value="Docurama">Docurama</option>
+                  <option value="Dove">Dove</option>
+                  <option value="elf.com">elf.com</option>
+                  <option value="ESPN">ESPN</option>
+                  <option value="ESPN Deportes">ESPN Deportes</option>
+                  <option value="eSPORTS1">eSPORTS1</option>
+                  <option value="Estrella">Estrella</option>
+                  <option value="Estrella KRCA">Estrella KRCA</option>
+                  <option value="European League of Football">European League of Football</option>
+                  <option value="Fandor">Fandor</option>
+                  <option value="Fernsehen mit Herz">Fernsehen mit Herz</option>
+                  <option value="FIFA WOMEN'S">FIFA WOMEN'S</option>
+                  <option value="Filmelier Plus">Filmelier Plus</option>
+                  <option value="Food Network">Food Network</option>
+                  <option value="ForoTV">ForoTV</option>
+                  <option value="FOX">FOX</option>
+                  <option value="Fox Deportes">Fox Deportes</option>
+                  <option value="FOX Nation">FOX Nation</option>
+                  <option value="FOX Sports">FOX Sports</option>
+                  <option value="Freeform">Freeform</option>
+                  <option value="FX">FX</option>
+                  <option value="Gaia">Gaia</option>
+                  <option value="Galavision">Galavision</option>
+                  <option value="Game Show Network">Game Show Network</option>
+                  <option value="Golf">Golf</option>
+                  <option value="gpi.global">gpi.global</option>
+                  <option value="Hallmark Movies Now">Hallmark Movies Now</option>
+                  <option value="Hallmark TV">Hallmark TV</option>
+                  <option value="Hayu">Hayu</option>
+                  <option value="HBO">HBO</option>
+                  <option value="HGTV">HGTV</option>
+                  <option value="Hi-YAH!">Hi-YAH!</option>
+                  <option value="History Play">History Play</option>
+                  <option value="HLN">HLN</option>
+                  <option value="Hogar de HGTV">Hogar de HGTV</option>
+                  <option value="Hopster Learning">Hopster Learning</option>
+                  <option value="IFC Films Unlimited">IFC Films Unlimited</option>
+                  <option value="indemand.com">indemand.com</option>
+                  <option value="Investigation Discovery">Investigation Discovery</option>
+                  <option value="Jukebox">Jukebox</option>
+                  <option value="Kabel Eins CLASSICS">Kabel Eins CLASSICS</option>
+                  <option value="Lionsgate Plus Brazil">Lionsgate Plus Brazil</option>
+                  <option value="Lionsgate Plus UK">Lionsgate Plus UK</option>
+                  <option value="Looke">Looke</option>
+                  <option value="Magellan TV">Magellan TV</option>
+                  <option value="Magnolia Network">Magnolia Network</option>
+                  <option value="Magnolia Selects">Magnolia Selects</option>
+                  <option value="MAVTV">MAVTV</option>
+                  <option value="Max">Max</option>
+                  <option value="Max (MovieLabs)">Max (MovieLabs)</option>
+                  <option value="MGM+">MGM+</option>
+                  <option value="MHz Choice">MHz Choice</option>
+                  <option value="MLB Network">MLB Network</option>
+                  <option value="MLB.TV">MLB.TV</option>
+                  <option value="MLS">MLS</option>
+                  <option value="Motorvision.de">Motorvision.de</option>
+                  <option value="Motorvision.TV">Motorvision.TV</option>
+                  <option value="MovieSphere">MovieSphere</option>
+                  <option value="MSNBC">MSNBC</option>
+                  <option value="MTV">MTV</option>
+                  <option value="MyOutdoorTV">MyOutdoorTV</option>
+                  <option value="Nat Geo">Nat Geo</option>
+                  <option value="Nat Geo Mundo">Nat Geo Mundo</option>
+                  <option value="NBA">NBA</option>
+                  <option value="NBA League Pass">NBA League Pass</option>
+                  <option value="NBA TV">NBA TV</option>
+                  <option value="NBC">NBC</option>
+                  <option value="NBC Sports">NBC Sports</option>
+                  <option value="NCAA Football">NCAA Football</option>
+                  <option value="NFL Network">NFL Network</option>
+                  <option value="NHL">NHL</option>
+                  <option value="Nickelodeon">Nickelodeon</option>
+                  <option value="NTN 24">NTN 24</option>
+                  <option value="Nuestra Tele">Nuestra Tele</option>
+                  <option value="Ops Test Network">Ops Test Network</option>
+                  <option value="Outside Features">Outside Features</option>
+                  <option value="Pantaya">Pantaya</option>
+                  <option value="Paramount">Paramount</option>
+                  <option value="Paramount Plus">Paramount Plus</option>
+                  <option value="Paramountplus Global">Paramountplus Global</option>
+                  <option value="pasiones">pasiones</option>
+                  <option value="PBS">PBS</option>
+                  <option value="PBS Kids">PBS Kids</option>
+                  <option value="pbskids.com">pbskids.com</option>
+                  <option value="PokerGO">PokerGO</option>
+                  <option value="ProSieben FUN">ProSieben FUN</option>
+                  <option value="Qello Concerts">Qello Concerts</option>
+                  <option value="QVC,Telemundo">QVC,Telemundo</option>
+                  <option value="RCN Total">RCN Total</option>
+                  <option value="Screambox">Screambox</option>
+                  <option value="ScreenPix">ScreenPix</option>
+                  <option value="SHOWTIME">SHOWTIME</option>
+                  <option value="Shudder">Shudder</option>
+                  <option value="Sofa">Sofa</option>
+                  <option value="SonyCine">SonyCine</option>
+                  <option value="SPORT1+">SPORT1+</option>
+                  <option value="Sportdigital.de">Sportdigital.de</option>
+                  <option value="STARZ">STARZ</option>
+                  <option value="Sundance Now">Sundance Now</option>
+                  <option value="SYFY">SYFY</option>
+                  <option value="Tastemade">Tastemade</option>
+                  <option value="Tastemade Español">Tastemade Español</option>
+                  <option value="TCM">TCM</option>
+                  <option value="Telehit">Telehit</option>
+                  <option value="Telehit Música">Telehit Música</option>
+                  <option value="Telemundo">Telemundo</option>
+                  <option value="The CW">The CW</option>
+                  <option value="The Great Courses">The Great Courses</option>
+                  <option value="The Weather Channel Español">The Weather Channel Español</option>
+                  <option value="The Young Turks">The Young Turks</option>
+                  <option value="TLC">TLC</option>
+                  <option value="tlnovelas">tlnovelas</option>
+                  <option value="Topic">Topic</option>
+                  <option value="Tr3s: MTV, Musica y Mas">Tr3s: MTV, Musica y Mas</option>
+                  <option value="Travel Channel">Travel Channel</option>
+                  <option value="truTV">truTV</option>
+                  <option value="TUDN">TUDN</option>
+                  <option value="tvpasiones.com">tvpasiones.com</option>
+                  <option value="TYCSports">TYCSports</option>
+                  <option value="UniMas">UniMas</option>
+                  <option value="UNIVERSO">UNIVERSO</option>
+                  <option value="Univision">Univision</option>
+                  <option value="UP Faith & Family">UP Faith & Family</option>
+                  <option value="VH1">VH1</option>
+                  <option value="Viaplay UK">Viaplay UK</option>
+                  <option value="ViX Premium">ViX Premium</option>
+                  <option value="vixplus.com">vixplus.com</option>
+                  <option value="Waidwerk">Waidwerk</option>
+                  <option value="WAPA">WAPA</option>
+                  <option value="WE tv">WE tv</option>
+                  <option value="WNBA">WNBA</option>
+                  <option value="World of Freesports">World of Freesports</option>
+                  <option value="SAT.1 emotions">SAT.1 emotions</option>
+                  <option value="CNNe">CNNe</option>
+                  <option value="qello.com">qello.com</option>
+                  <option value="Sportdigital FUSSBALL">Sportdigital FUSSBALL</option>
+                  <option value="NFL Game Pass">NFL Game Pass</option>
+                  <option value="English Premier League">English Premier League</option>
+                  <option value="FIFA World Cup">FIFA World Cup</option>
+                  <option value="Olympics">Olympics</option>
+                  <option value="Zee Family">Zee Family</option>
+                  <option value="HereTV">HereTV</option>
+                  <option value="Comedy Dynamics">Comedy Dynamics</option>
+                  <option value="RCN Novelas">RCN Novelas</option>
+                  <option value="NCAAM">NCAAM</option>
+                  <option value="NCAAW">NCAAW</option>
+                  <option value="Gute Laune TV">Gute Laune TV</option>
+                  <option value="Tastemade+">Tastemade+</option>
+                  <option value="MLB League">MLB League</option>
+                  <option value="The Oscars">The Oscars</option>
+                  <option value="GMA Pinoy TV">GMA Pinoy TV</option>
+                  <option value="GMA Life TV">GMA Life TV</option>
+                  <option value="GMA News TV International">GMA News TV International</option>
+                  <option value="The Filipino Channel">The Filipino Channel</option>
+                  <option value="ION Television">ION Television</option>
+                  <option value="My Network TV">My Network TV</option>
+                </select>
+            </div>
+        </div>
+
+        <label for="symphonyLink" class="block mb-2">Symphony Link:</label>
+        <input type="text" id="symphonyLink" class="bg-gray-700 text-white p-2 rounded-md mb-4 w-full">
+
+        <label for="hadesLink" class="block mb-2">Hades Link:</label>
+        <input type="text" id="hadesLink" class="bg-gray-700 text-white p-2 rounded-md mb-4 w-full">
+
+        <label for="yttvCasesLink" class="block mb-2">YTTV/Cases Link:</label>
+        <input type="text" id="yttvCasesLink" class="bg-gray-700 text-white p-2 rounded-md mb-4 w-full">
+
+        <label for="countOfInstances" class="block mb-2">Instances:</label>
+        <input type="number" id="countOfInstances" class="bg-gray-700 text-white p-2 rounded-md mb-4 w-full">
+
+        <label for="comments" class="block mb-2">Comments:</label>
+        <textarea id="comments" rows="4"
+            class="bg-gray-700 text-white p-2 rounded-md mb-4 w-full"></textarea>
+
+        <div class="button-container flex justify-between">
+            <button class="button bg-blue-500 text-white px-4 py-2 rounded-md w-1/3" id="startButton"
+                onclick="startTimer()">Start</button>
+            <button class="button bg-red-500 text-white px-4 py-2 rounded-md w-1/3" id="stopButton"
+                onclick="stopTimer()" disabled>Stop</button>
+            <button class="button bg-gray-500 text-white px-4 py-2 rounded-md w-1/3" id="discard"
+                onclick="discardData()">Discard</button>
+        </div>
+
+      <div class="text-center mt-4">Total Time: <span id="totalTime" class="text-lg">0:00:00</span></div>
+  </div>
+
+<!-- Include the SweetAlert library for displaying user-friendly alerts -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</body>
+</html>
