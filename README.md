@@ -25,103 +25,81 @@ This is a web app that has been developed for each Line of Business (LOB) in You
 <h2>Process Flowchart</h2>
 
 <p align="center">
-<img src="https://github.com/MAmojica/YTTV-AttendanceWebApp/assets/78264218/afc3fa06-2a43-4848-b7bf-626db915273f" alt="Image Analysis Dataflow"/>
+<img src="https://github.com/MAmojica/TickTocker/assets/78264218/d4c44e42-1d57-41e3-b9b9-8fcb5d68b6e1" alt="Image Analysis Dataflow"/>
 </p>
 
 
-<h3> User Accesses the Web Application </h3> 
+<h3>1. Start</h3>
+- The workflow begins.
 
-- The process initiates when the user opens the attendance tracking web application.
+<h3>2. Display current date</h3>
+- The app displays the current date.
 
-<h3> Server-side Functionality: `doGet()` </h3>
+<h3>3. Display current user email</h3>
+- The app shows the current user's email address.
 
-- The server generates an HTML output from the file `page.html`.
-- The page title is set to "Attendance Tracker".
-- The generated HTML output is sent back to the client.
+<h3>4. Note on inputs and timer</h3>
+- Inputs are validated, and the timer starts when the user clicks the "Start" button.
 
-<h3> Client-side Functionality: Page Load </h3>
+<h3>5. Validate required fields</h3>
+The app checks if the following required fields are filled in:
+<h4>Shift Date:</h4> The date of the work shift.
+<h4>Sub-Activity:</h4> The specific activity being performed.
+<h4>Network/League:</h4> The network or league associated with the task.
 
-- Upon loading the HTML page, client-side JavaScript begins execution.
-- Event listeners are set up for load and button click events.
+<h3>6. Check if required fields are filled</h3>
+<h4>Yes:</h4> If the required fields are filled, proceed to start the timer and enable the "Stop" button.
+<h4>No:</h4> If the required fields are not filled, display an error message and stop the process.
 
-<h3> Client-side Functionality: `displayCurrentDate()` Function </h3>
+<h3>7. Start Timer</h3>
+- Begin timing the task once the required fields are validated.
 
-- The client invokes `displayCurrentDate()`, which in turn calls the server-side function `google.script.run.getCurrentTime()`.
+<h3>8. Enable Stop button</h3>
+- Enable the "Stop" button for the user to click once they are done with the task.
 
-<h3> Server-side Functionality: `getCurrentTime()` Function </h3>
+<h3>9. User performs tasks</h3>
+- The user carries out their tasks while the timer is running.
 
-- The server retrieves the current time in milliseconds.
-- The current time is sent back to the client.
+<h3>10. User clicks Stop button</h3>
+- When the user finishes their task, they click the "Stop" button.
 
-<h3> Client-side Functionality: Setting `currentDate` Value </h3>
+<h3>11. Confirm submission</h3>
+- The app asks the user to confirm if they want to submit their data.
 
-- The client formats the server time to the local date.
-- The formatted date is set as the value of the `currentDate` input field.
+<h3>12. User confirms?</h3>
+<h4>Yes:</h4> If the user confirms, proceed to validate the inputs again.
+<h4>No:</h4> If the user does not confirm, return to the task and continue.
 
-<h3> Client-side Functionality: Retrieving User Email </h3>
+<h3>13. Validate inputs again</h3>
+- Ensure that all inputs are still valid before finalizing the submission.
 
-- The client calls `google.script.run.getUserEmail()` to obtain the user's email.
+<h3>14. Inputs valid?</h3>
+<h4>Yes:</h4> If the inputs are valid, proceed to the next steps.
+<h4>No:</h4> If the inputs are invalid, display an error message and stop the process.
 
-<h3> Server-side Functionality: `getUserEmail()` Function </h3>
+<h3>15. Stop Timer</h3>
+- Stop the timer to record the elapsed time for the task.
 
-- The server retrieves the active user's email.
-- The email is sent back to the client.
+<h3>16. Calculate elapsed time</h3>
+Determine the total time spent on the task.
 
-<h3> Client-side Functionality: Calling `getUserInfo(userEmail)` </h3>
+<h3>17. Format and prepare data</h3>
+- Organize and format the data for submission.
 
-- Using the retrieved email, the client calls `google.script.run.getUserInfo(userEmail)`.
+<h3>18. Send data to Google Sheets</h3>
+- Submit the prepared data to Google Sheets for record-keeping.
 
-<h3> Server-side Functionality: `getUserInfo(userEmail)` Function </h3>
+<h3>19. Display success message</h3>
+- Inform the user that their data has been successfully submitted.
 
-- The server fetches user information from the "allowlist" sheet in the Google Spreadsheet.
-- User information, including full name, cognizant EID, wave, and tower, is returned to the client.
+<h3>20. Reset Timer</h3>
+- Reset the timer for any future tasks.
 
-<h3> Client-side Functionality: Populating User Info </h3>
+<h3>21. Clear input fields</h3>
+- Clear the input fields to allow the user to enter new data for the next task.
 
-- The client populates the form fields with the retrieved user information.
-
-<h3> Client-side Functionality: Clock In/Out Button Click </h3>
-
-- Upon clicking the Clock In or Clock Out button, the `clockInOrOut(status)` function is triggered.
-- Event listeners handle button clicks, retrieve form data, and validate inputs.
-
-<h3> Client-side Functionality: Validation </h3>
-
-- Form data is retrieved and validated.
-- If validation fails, an error message is displayed using SweetAlert2, and the process halts.
-- If validation succeeds, the client calls `google.script.run.getCurrentTime()` to get the current time.
-
-<h3> Server-side Functionality: `getCurrentTime()` Function </h3>
-
-- The server retrieves the current time in milliseconds.
-- The current time is sent back to the client.
-
-<h3> Client-side Functionality: Retrieving Server Time </h3>
-
-- The client formats the server time to the local date.
-- The client calls `google.script.run.getManilaTimestamp()` to obtain the Manila timestamp.
-
-<h3> Server-side Functionality: `getManilaTimestamp()` Function </h3>
-
-- The server fetches and formats the Manila timestamp.
-- The Manila timestamp is sent back to the client.
-
-<h3> Client-side Functionality: Preparing Data Array </h3>
-
-- The client creates a data array containing various details such as current date, shift date, user email, full name, cognizant EID, wave, tower, screenshot, status, and Manila timestamp.
-- The client calls `google.script.run.exportData(data)` to export the data.
-
-<h3> Server-side Functionality: `exportData(data)` Function </h3>
-
-- The server appends the data array to the active sheet in the Google Spreadsheet.
-
-<h3> Client-side Functionality: Displaying Success Message </h3>
-
-- The client displays a success message using SweetAlert2 based on the status (Clock In or Clock Out).
-
-<h3> End of Process </h3>
-
-- The process concludes successfully.
+<h3>22. Stop</h3>
+- The process ends.
   
 <!--
  ```diff
