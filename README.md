@@ -1,13 +1,5 @@
 <h1>TickTocker</h1>
 
-
- ### [Project Demonstration](https://youtu.be/7eJexJVCqJo)
-
-<h2>
- 
- 
- </h2>
-
 <h2>Description</h2>
 This is a web app that has been developed for each Line of Business (LOB) in YouTube TV - TVPO with the goal of streamlining and enhancing the process of tracking and recording task utilizations. This project consists of a form interface specifically designed for monitoring and documenting various activities associated with video-on-demand (VOD) tasks. The primary objective of the form is to simplify the tracking and documentation of VOD-related activities, ensuring that all pertinent information is recorded accurately and easily exported to google sheets for client reporting.
 <br />
